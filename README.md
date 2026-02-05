@@ -406,3 +406,269 @@ java -javaagent:/otel/opentelemetry-javaagent.jar \
 | Metric | request.count           |
 | Trace  | user → API → DB         |
 | Span   | payment-service latency |
+
+
+## Splunk Universal Forwarder
+
+### Step 1: Install Universal Forwarder
+```
+wget -O splunkforwarder.tgz https://download.splunk.com/products/universalforwarder/releases/latest/linux/splunkforwarder.tgz
+tar -xvzf splunkforwarder.tgz -C /opt
+```
+### Step 2: Start & enable boot start
+```
+/opt/splunkforwarder/bin/splunk start --accept-license
+/opt/splunkforxwarder/bin/splunk enable boot-start
+```
+### Step 3: Configure where to send logs
+```
+/opt/splunkforwarder/bin/splunk add forward-server splunk-indexer:9997
+```
+### Step 4: Add log files to monitor
+## Example: system logs
+```
+/opt/splunkforwarder/bin/splunk add monitor /var/log/messages
+/opt/splunkforwarder/bin/splunk add monitor /var/log/syslog
+```
+## Example: application logs
+```
+/opt/splunkforwarder/bin/splunk add monitor /var/log/myapp/app.log
+```
+### Step 5: Verify in Splunk
+```
+index=main host=my-server
+```
+### Why Universal Forwarder is best for logs
+- Handles log rotation
+- Backpressure handling
+- Guaranteed delivery
+- Secure (TLS)
+- Low CPU/memory
+- Battle-tested at scale
+- This is why every enterprise uses it.
+
+
+### What does the SignalFx OpenTelemetry Collector exactly collect?
+- The SignalFx OpenTelemetry Collector does NOT “magically monitor everything.”
+- It collects only what is explicitly sent or scraped through configured receivers.
+```
+Sources → Receivers → Processors → Exporters → SignalFx
+```
+- Sources = apps, OS, Kubernetes, cloud
+- Receivers = how data enters the collector
+- Processors = enrich / batch / filter
+- Exporters = where data is sent
+
+### 1️⃣ Metrics it collects (WHAT metrics?)
+
+### A. Infrastructure / Host metrics (VMs & nodes)
+
+### Collected only if host receivers are enabled:
+
+- CPU: cpu.utilization, cpu.time, cpu.load (1m/5m/15m)
+- Memory: memory.used, memory.available, memory.utilization
+- Disk: disk.used, disk.free, disk.io, disk.latency
+- Network: network.rx/tx bytes, packet drops, errors
+
+### 📌 Source:
+- Linux host
+- EC2 / VM
+- Kubernetes node (via kubelet)
+
+### B. Kubernetes metrics (cluster state & health)
+
+- Collected only if k8s receivers are enabled:
+- Node: node.ready, node.memory_pressure, node.disk_pressure, node.pid_pressure
+- Pod: pod.restarts, pod.cpu.throttling, pod.memory.usage, pod.phase (Running / Pending / Failed)
+- Workloads: deployment.desired_replicas, deployment.available_replicas, rollout status
+
+### 📌 Source:
+- kubelet
+- cAdvisor
+- kube-state-metrics
+- Kubernetes API
+
+### C. Application metrics (Golden Signals ⭐)
+- Collected only if the application is instrumented:
+- Latency: http.server.duration (P50/P95/P99), db.query.duration, Traffic, request.count
+- RPS
+- Errors: http.status_code (4xx / 5xx), exception.count, timeout.count
+- Saturation: thread pool usage, DB connection pool usage, queue depth
+
+### 📌 Source:
+- OpenTelemetry SDK inside the app
+
+👉 If the app is NOT instrumented → no app metrics
+
+### 2️⃣ Traces it collects (WHEN do traces appear?)
+
+- The collector does not generate traces itself.
+- It collects traces only when:
+ - Your app is instrumented with OpenTelemetry
+ - Traces are sent via OTLP
+
+### What a trace contains
+- trace_id
+- spans (API, DB, cache, external calls)
+- per-span latency
+- error flags
+
+### 📌 Source:
+- App → OpenTelemetry SDK → OTLP → Collector
+
+
+👉 No SDK = no traces
+👉 No OTLP receiver = no traces
+
+### 📌 VM / EC2 (Non-Kubernetes workloads)
+### What to deploy & why
+
+| Signal      | Tool to Use                                       | What it Collects                                  | How You Deploy                          |
+| ----------- | ------------------------------------------------- | ------------------------------------------------- | --------------------------------------- |
+| **Metrics** | **SignalFx OpenTelemetry Collector (agent mode)** | CPU, memory, disk, network, load avg, app metrics | Install as OS service (`systemd`)       |
+| **Traces**  | **OpenTelemetry SDK + OTel Collector**            | Distributed traces, spans, latency                | Instrument app + send OTLP to collector |
+| **Logs**    | **Splunk Universal Forwarder**                    | System logs, app logs                             | Install UF as background service        |
+
+
+### 📌 Kubernetes (Containerized workloads)
+### What to deploy & why
+
+| Signal                    | Tool to Use                            | What it Collects                           | How You Deploy            |
+| ------------------------- | -------------------------------------- | ------------------------------------------ | ------------------------- |
+| **Metrics (Infra + K8s)** | **SignalFx OTel Collector**            | Node, pod, kube-state, CPU/mem, throttling | **DaemonSet** (via Helm)  |
+| **Metrics (App)**         | **OpenTelemetry SDK**                  | RPS, latency, errors, saturation           | Instrument app containers |
+| **Traces**                | **OpenTelemetry SDK + OTel Collector** | Distributed traces                         | App → OTLP → Collector    |
+| **Logs**                  | **Fluent Bit**                         | Pod/container stdout logs                  | **DaemonSet**             |
+| **Log Store**             | **Splunk**                             | Search, RCA, retention                     | HEC ingestion             |
+
+### 📌 How each component is deployed (quick cheat)
+
+| Component                  | VM / EC2             | Kubernetes           |
+| -------------------------- | -------------------- | -------------------- |
+| SignalFx OTel Collector    | OS package + systemd | Helm → DaemonSet     |
+| OpenTelemetry SDK          | App runtime config   | App container config |
+| Splunk Universal Forwarder | Installed on VM      | ❌ Not used           |
+| Fluent Bit                 | ❌ Not used           | DaemonSet            |
+| Logs destination           | Splunk Indexers      | Splunk HEC           |
+
+
+### Fluentd vs Fluent Bit (real-world choice)
+| Feature          | Fluentd               | Fluent Bit          |
+| ---------------- | --------------------- | ------------------- |
+| Resource usage   | Heavy (Ruby)          | Lightweight (C)     |
+| Memory footprint | High                  | Very low            |
+| Performance      | Good                  | Excellent           |
+| Plugins          | Very rich             | Most common         |
+| Best for         | Complex log pipelines | Kubernetes clusters |
+
+- Fluent Bit runs as a DaemonSet, tails container stdout logs from /var/log/containers, enriches them with Kubernetes metadata, and sends them to Splunk via HEC.
+
+### Fluent Bit Raw DaemonSet
+
+### ConfigMap
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush 1
+        Log_Level info
+
+    @INCLUDE input.conf
+    @INCLUDE filter.conf
+    @INCLUDE output.conf
+
+  input.conf: |
+    [INPUT]
+        Name tail
+        Path /var/log/containers/*.log
+        Parser cri
+        Tag kube.*
+
+  filter.conf: |
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Merge_Log On
+
+  output.conf: |
+    [OUTPUT]
+        Name splunk
+        Match *
+        Host splunk-hec.example.com
+        Port 8088
+        Splunk_Token ${SPLUNK_HEC_TOKEN}
+        TLS On
+```
+### DaemonSet
+```
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: logging
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      containers:
+      - name: fluent-bit
+        image: fluent/fluent-bit:2.2
+        env:
+        - name: SPLUNK_HEC_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: splunk-hec-secret
+              key: token
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: config
+          mountPath: /fluent-bit/etc
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: config
+        configMap:
+          name: fluent-bit-config
+```
+
+### 🔍 What logs Fluent Bit collects (exactly)
+
+| Source           | Path                        |
+| ---------------- | --------------------------- |
+| Container stdout | `/var/log/containers/*.log` |
+| Pod metadata     | Kubernetes API              |
+| Node info        | kubelet                     |
+
+- Each log is enriched with:
+ - pod name
+ - namespace
+ - container
+ - labels
+ - node
+
+### 🔗 Correlating logs with traces (IMPORTANT)
+- Make sure app logs include:
+```
+{
+  "service.name": "payment-service",
+  "trace_id": "abc123",
+  "span_id": "def456"
+}
+```
+
+Then:
+- SignalFx → trace
+- Splunk → logs
+- Same trace_id = instant RCA 🔥
