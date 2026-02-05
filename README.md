@@ -275,3 +275,134 @@ over a rolling 30 days
 ## 6️⃣ SLAs (Service Level Agreements)
 - SLA = legal / customer-facing promise
 - If you break it → 💸 penalties
+
+
+## How We get Metrics, Traces and Logs?
+
+```
+Application
+ ├─ Metrics + Traces → OpenTelemetry SDK
+ │                     ↓
+ │              OTel Collector
+ │                     ↓
+ │                SignalFx
+ │
+ └─ Logs → Fluent Bit / Splunk Forwarder → Splunk
+````
+
+### 1️⃣ Deploy SignalFx OpenTelemetry Collector on Servers / VMs
+
+### When you do this
+- Legacy apps
+- EC2 / VM workloads
+- Non-Kubernetes services
+
+### Step 1: Download the Collector
+
+```
+curl -LO https://github.com/signalfx/splunk-otel-collector/releases/latest/download/splunk-otel-collector_linux_amd64.deb
+sudo dpkg -i splunk-otel-collector_linux_amd64.deb
+```
+
+### Step 2: Configure the Collector
+### File: /etc/otel/collector/agent_config.yaml
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+processors:
+  batch:
+  resource:
+    attributes:
+      - key: service.environment
+        value: prod
+        action: upsert
+
+exporters:
+  signalfx:
+    access_token: ${SPLUNK_ACCESS_TOKEN}
+    realm: us0   # or eu0, etc.
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [signalfx]
+
+    traces:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [signalfx]
+```
+
+### Step 3: Start the service
+```
+sudo systemctl enable splunk-otel-collector
+sudo systemctl start splunk-otel-collector
+```
+✅ Your VM can now receive metrics & traces.
+
+
+### 2️⃣ Deploy SignalFx OpenTelemetry Collector on Kubernetes
+- Best practice
+ - DaemonSet → node-level metrics
+ - Deployment → app-level telemetry aggregation
+
+```
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector
+spec:
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+      - name: otel-collector
+        image: quay.io/signalfx/splunk-otel-collector:latest
+        env:
+        - name: SPLUNK_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: splunk-secret
+              key: token
+        - name: SPLUNK_REALM
+          value: us0
+```
+
+### 3️⃣ How we instrument applications (THIS IS KEY)
+- Metrics don’t magically appear.
+- Instrumentation = code + runtime hooks
+
+- Java application (most common)
+ - Step 1: Add Java agent (no code change!)
+```
+java -javaagent:/otel/opentelemetry-javaagent.jar \
+     -Dotel.service.name=payment-service \
+     -Dotel.exporter.otlp.endpoint=http://otel-collector:4317 \
+     -jar app.jar
+```
+### What you get automatically:
+- HTTP latency
+- DB calls
+- Error counts
+- Full traces
+
+### What telemetry is generated
+
+| Signal | Example                 |
+| ------ | ----------------------- |
+| Metric | request.duration        |
+| Metric | request.count           |
+| Trace  | user → API → DB         |
+| Span   | payment-service latency |
