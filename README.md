@@ -87,7 +87,7 @@
 - Node pressure
 - Deployment replica health
 
-###🔹Application Metrics (Golden Signals ⭐)
+### Application Metrics (Golden Signals ⭐)
 - Latency (P95 / P99)
 - Traffic (RPS)
 - Errors (4xx / 5xx)
