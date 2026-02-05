@@ -191,4 +191,87 @@ You see:
 
 ### ✅ Togethe = True Observability
 
+## 1️⃣ Latency Percentiles: P95 & P99 (the “slow users” story)
+- Latency = time taken to serve a request
+- Example: /checkout API took 320 ms
 
+### What does P95 mean?
+- P95 latency = 95% of requests are faster than this value
+- The slowest 5% are slower than this
+
+### What does P99 mean?
+- P99 latency = 99% of requests are faster than this value
+- The slowest 1% are slower than this
+
+## 2️⃣ Tracing (following a single request 🔍)
+- Metrics say “something is slow
+- Tracing says “THIS is where it’s slow”
+
+### What is a Trace?
+- A trace follows one request as it travels through multiple services.
+
+### Example Trace Scenario
+- User clicks “Place Order”
+```
+  User
+ ↓ 50ms
+API Gateway
+ ↓ 80ms
+Auth Service
+ ↓ 900ms  ❌
+Payment Service
+ ↓ 120ms
+Database
+```
+🧠 From this trace:
+- Total latency = ~1.15s
+- Payment Service is the bottleneck
+- Now you know where to look
+
+### How tracing + P99 work together
+- P99 alert fires → “Some users are very slow”
+- You open a trace from a slow request
+- You see exact service & dependency causing delay
+
+## 3️⃣ Error Rate (how often things fail ❌)
+### What is error rate?
+- Error rate = percentage of failed requests
+```
+Error Rate = (Failed Requests / Total Requests) × 100
+```
+### What counts as an error?
+- Usually:
+ - HTTP 5xx → server errors
+ - Sometimes 4xx (depends on design)
+ - Timeouts
+ - Dependency failures
+
+## 4️⃣ SLIs (Service Level Indicators)
+- SLI = what you measure
+- These are raw metrics.
+### Common SLIs (Golden Signals ⭐)
+
+| SLI Type     | Example               |
+| ------------ | --------------------- |
+| Latency      | P95 < 500 ms          |
+| Availability | % successful requests |
+| Error rate   | < 1%                  |
+| Throughput   | Requests per second   |
+| Saturation   | CPU / memory usage    |
+
+```SLI: Percentage of requests completed under 500 ms```
+
+## 5️⃣ SLOs (Service Level Objectives)
+- SLO = the target you promise internally
+- Built on top of SLIs.
+```
+99.9% of checkout requests
+must complete under 500 ms
+over a rolling 30 days
+```
+- 0.1% requests can be slow
+- Error budget exists
+
+## 6️⃣ SLAs (Service Level Agreements)
+- SLA = legal / customer-facing promise
+- If you break it → 💸 penalties
