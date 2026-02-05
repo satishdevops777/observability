@@ -1,5 +1,5 @@
 # OBSERVABILITY
- - Observability is the capability of a system to explain its internal state using telemetry data like logs, metrics, and traces.
+- Observability is the capability of a system to explain its internal state using telemetry data like logs, metrics, and traces.
 
 👉 If your system breaks at 3 AM, observability tells you what broke, where, why, and what to do next.
 
