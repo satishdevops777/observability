@@ -101,6 +101,7 @@
 
 ### Example Alert in SignalFx 🚨
  <img width="542" height="166" alt="image" src="https://github.com/user-attachments/assets/da39c50a-574e-44cd-9bdf-0b1b5f7f1c88" />
+
 👉 This tells you something is wrong
 - But not yet why.
 - 
