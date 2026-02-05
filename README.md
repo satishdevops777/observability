@@ -61,7 +61,8 @@
 - Is something wrong? → SignalFx
 - Where is it wrong? → SignalFx
 - Why did it happen? → Splunk
- 
+ <img width="673" height="217" alt="image" src="https://github.com/user-attachments/assets/3deaa414-f7a8-4c21-a444-c53312b02fc4" />
+
 
 ### Components You’re Using
 ### Splunk
@@ -96,32 +97,32 @@
 - Cloud integrations (AWS, Azure, GCP)
 - App instrumentation (Java, Node, Python, etc.)
 
-Example Alert in SignalFx 🚨
- 
+### Example Alert in SignalFx 🚨
+ <img width="542" height="166" alt="image" src="https://github.com/user-attachments/assets/da39c50a-574e-44cd-9bdf-0b1b5f7f1c88" />
 👉 This tells you something is wrong
-But not yet why.
-2️⃣ Logging & Deep Debugging with Splunk
-What goes into Splunk
-•	Application logs
-•	Kubernetes pod logs
-•	Node/system logs
-•	API gateway logs
-•	Error & exception traces
+- But not yet why.
+- 
+## 2️⃣ Logging & Deep Debugging with Splunk
+### What goes into Splunk
+- Application logs
+- Kubernetes pod logs
+- Node/system logs
+- API gateway logs
+- Error & exception traces
 
 
-Example Logs in Splunk 🔍
+### Example Logs in Splunk 🔍
+<img width="455" height="128" alt="image" src="https://github.com/user-attachments/assets/d0d17cb3-fcb8-4c8b-9ad4-b04e18303978" />
 
- 
-Now you know:
-•	Which service
-•	Which dependency
-•	Exact failure reason
+### Now you know:
+- Which service
+- Which dependency
+- Exact failure reason
 
-3️⃣ How Monitoring + Observability Work Together
-
-🚨 Incident Flow (Real World)
-Step 1: Alert fires in SignalFx
-High latency in payment-service
+## 3️⃣ How Monitoring + Observability Work Together
+### 🚨 Incident Flow (Real World)
+- Step 1: Alert fires in SignalFx
+- High latency in payment-service
 
 ### Step 2: Open SignalFx dashboard
 You see:
@@ -185,7 +186,6 @@ You see:
 - RCA
 - Audit & forensics
 
-### ✅ Together
-- = True Observability
+### ✅ Togethe = True Observability
 
 
