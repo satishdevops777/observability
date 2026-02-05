@@ -1,4 +1,4 @@
-# observability
+# Observbility
  - Observability is the capability of a system to explain its internal state using telemetry data like logs, metrics, and traces.
 
 👉 If your system breaks at 3 AM, observability tells you what broke, where, why, and what to do next.
@@ -672,3 +672,19 @@ Then:
 - SignalFx → trace
 - Splunk → logs
 - Same trace_id = instant RCA 🔥
+
+### Observability Tools Comparison Table
+
+| Area                        | **Splunk + SignalFx**                      | **Prometheus + Grafana** | **Elastic Stack (ELK)** | **Datadog**      | **New Relic**         |
+| --------------------------- | ------------------------------------------ | ------------------------ | ----------------------- | ---------------- | --------------------- |
+| **Primary strength**        | Enterprise logs + real-time observability  | Metrics & dashboards     | Logs & search           | All-in-one SaaS  | APM & monitoring      |
+| **Logs**                    | ⭐ Best-in-class (scale, search, retention) | ❌ Not native             | Good but ops-heavy      | Good             | Good                  |
+| **Metrics**                 | ⭐ Real-time, high-cardinality              | Good (DIY scaling)       | Limited                 | Good             | Good                  |
+| **Traces / APM**            | Good (OTel-based)                          | Basic (needs addons)     | Limited                 | Good             | ⭐ Strong              |
+| **SLO & burn-rate alerts**  | ⭐ Native, SRE-focused                      | Manual & complex         | ❌ No                    | Basic            | Basic                 |
+| **Scales to TBs/day**       | ⭐ Yes (proven)                             | Hard                     | Hard                    | Yes (costly)     | Yes                   |
+| **Operational overhead**    | Low (managed SaaS)                         | High (self-managed)      | High (tuning, JVM)      | Low              | Low                   |
+| **Compliance / audit logs** | ⭐ Excellent                                | ❌ No                     | Medium                  | Medium           | Medium                |
+| **Best for**                | Large enterprises, SRE teams               | Small/medium systems     | Log-centric teams       | SaaS-first teams | APM-heavy use cases   |
+| **Cost**                    | 💸 High                                    | 🆓 Low                   | 🆓 Medium               | 💸 Medium–High   | 💸 Medium             |
+| **Why teams choose it**     | Reliability + speed at scale               | Flexibility & cost       | Searchable logs         | Ease of use      | App performance focus |
