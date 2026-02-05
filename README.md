@@ -80,11 +80,13 @@
 - CPU, memory, disk, network
 - Node health
 - Load average
+
 ### 🔹 Kubernetes Metrics
 - Pod restarts
 - Pod CPU/memory throttling
 - Node pressure
 - Deployment replica health
+
 ###🔹Application Metrics (Golden Signals ⭐)
 - Latency (P95 / P99)
 - Traffic (RPS)
